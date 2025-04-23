@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blockly to JavaScript Converter</title>
+</head>
+<body>
+    <script>
+        function convertBlocklyToJS(json) {
+            // 处理不同类型的代码块
+            switch(json.type) {
+                case "当开始运行":
+                    return `当开始运行(() => {\n${convertBlocklyToJS(json.next)}\n});`;
+                
+                case "永远循环":
+                    return `永远循环(() => {\n${convertBlocklyToJS(json.statements.DO)}\n});`;
+                
+                case "如果":
+                    const condition = convertInputToJS(json.inputs.IF0);
+                    const doBlock = convertBlocklyToJS(json.statements.DO0);
+                    const elseBlock = json.statements.ELSE ? 
+                        ` else {\n${convertBlocklyToJS(json.statements.ELSE)}\n}` : '';
+                    return `if (${condition}) {\n${doBlock}\n}${elseBlock}`;
+                
+                case "移动步数":
+                    const steps = convertInputToJS(json.inputs.steps);
+                    return `移动步数(${steps});`;
+                
+                case "移到位置":
+                    const x = convertInputToJS(json.inputs.x);
+                    const y = convertInputToJS(json.inputs.y);
+                    return `移到位置(${x}, ${y});`;
+                
+                default:
+                    return '';
+            }
+        }
+
+        function convertInputToJS(input) {
+            if (!input) return '';
+            
+            switch(input.type) {
+                case "判断角色碰撞":
+                    return `判断角色碰撞("${input.fields.sprite}", "${input.fields.sprite1}")`;
+                
+                case "math_number":
+                    return input.fields.NUM;
+                
+                default:
+                    return '';
+            }
+        }
+
+        // 测试数据
+        const testData = {
+            "type": "当开始运行",
+            "next": {
+                "type": "永远循环",
+                "statements": {
+                    "DO": {
+                        "type": "如果",
+                        "inputs": {
+                            "IF0": {
+                                "type": "判断角色碰撞",
+                                "fields": {
+                                    "sprite": "自己",
+                                    "sprite1": "鼠标"
+                                },
+                                "is_output": true
+                            }
+                        },
+                        "statements": {
+                            "DO0": {
+                                "type": "移动步数",
+                                "inputs": {
+                                    "steps": {
+                                        "type": "math_number",
+                                        "fields": {
+                                            "NUM": 10
+                                        },
+                                        "is_output": true
+                                    }
+                                }
+                            },
+                            "ELSE": {
+                                "type": "移到位置",
+                                "inputs": {
+                                    "x": {
+                                        "type": "math_number",
+                                        "fields": {
+                                            "NUM": 0
+                                        },
+                                        "is_output": true
+                                    },
+                                    "y": {
+                                        "type": "math_number",
+                                        "fields": {
+                                            "NUM": -100
+                                        },
+                                        "is_output": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // 测试转换
+        console.log(convertBlocklyToJS(testData));
+    </script>
+</body>
+</html> 
